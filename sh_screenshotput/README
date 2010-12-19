@@ -1,0 +1,17 @@
+get image from screen and put it to remote serv
+
+INSTALL:
+	copy screenshot, _screenshot, __screenshot to $PATH
+	&&
+	copy _screenshotrc to $HOME/.config/
+	&&
+	edit $HOME/.config/_screenshotrc
+
+USE:
+	screenshot $ID
+		shot windown with id $ID
+	screenshot
+		shot root window
+
+NEED:
+	xterm, xclip, graphick or image magick package, sftp and part of posix /bin

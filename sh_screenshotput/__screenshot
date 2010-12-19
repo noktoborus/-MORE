@@ -23,6 +23,19 @@ _exit ()
 	exit 1
 }
 
+module_bitcheese ()
+{
+	SRC=$1
+	DST=$2
+	RPATH=$3
+	( mkdir -p "${SRC}_bitcheese" >/dev/null 2>&1 &&\
+		cp $SRC "${SRC}_bitcheese/$DST" ) && SRC="${SRC}_bitcheese/$DST"
+	curl -v -o /dev/stdout -F file="@$SRC"\
+		http://dump.bitcheese.net/upload-image 2>&1 |\
+		tee "$SRC.bitcheese"
+	cat "$SRC.bitcheese" | grep 'Location:' | cut -d'/' -f 5-6
+}
+
 module_sftp ()
 {
 	SRC=$1
@@ -57,7 +70,7 @@ PID=$!
 
 TRG=$(dialog --stdout --menu "Choose target" 0 0 0\
 	edit "view/edit image with $EDIT"\
-	$(cat "$CFG" | grep -v ^$ | grep -v ^# | awk '{print $1" "$2"\\"}'))
+	$(cat "$CFG" | grep -v ^$ | grep -v ^# | awk '{print $1" "$2}'))
 [ $? -ne 0 ] && exit 0
 clear
 
@@ -136,6 +149,10 @@ do
 	case "$MODULE" in
 		sftp)
 			module_sftp "$SRC" "$DATE.$EXT" "$PUTADDR" 2>&1 | tee "$SRC.log"
+			RCOD=$?
+			;;
+		bitcheese)
+			module_bitcheese "$SRC" "$DATE.$EXT" "$PUTADDR" 2>&1 | tee "$SRC.log"
 			RCOD=$?
 			;;
 	esac

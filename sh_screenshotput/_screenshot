@@ -32,7 +32,7 @@ then
 	$IMPORT -window root "$CONV:$FILE"
 fi
 
-echo $$ > "${TMP}/${USER}_${q}.unlock"
+echo $$ > "${TMP}/${USER}_$$.unlock"
 if [ -e "$FILE" ];
 then
 	xterm -T 'screenshot output'\

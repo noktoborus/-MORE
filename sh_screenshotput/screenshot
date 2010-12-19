@@ -3,6 +3,8 @@
 # test
 which which
 [ $? -ne 0 ] && echo ":3"
+which dialog
+[ $? -ne 0 ] && echo "dialog not found"
 which xclip
 [ $? -ne 0 ] && echo "xclip not found"
 which xterm
@@ -26,7 +28,11 @@ fi
 TMP=${TMP-"/tmp"}
 for q in `pgrep ^_screenshot -U $USER`;
 do
-	[ ! -e "${TMP}/${USER}_${q}.unlock" ] && exit 42
+	if [ ! -e "${TMP}/${USER}_${q}.unlock" ];
+	then
+		echo "nE: $q"
+		exit 42
+	fi
 done
 _screenshot $*
 

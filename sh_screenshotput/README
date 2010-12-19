@@ -14,4 +14,9 @@ USE:
 		shot root window
 
 NEED:
-	xterm, xclip, graphick or image magick package, sftp and part of posix /bin
+	xterm
+	xclip
+	graphick or image magick package
+	sftp and part of posix /bin
+	dialog (curses or analog)
+

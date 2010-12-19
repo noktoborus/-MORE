@@ -1,0 +1,32 @@
+#!/bin/sh
+# ~.~
+# test
+which which
+[ $? -ne 0 ] && echo ":3"
+which xclip
+[ $? -ne 0 ] && echo "xclip not found"
+which xterm
+[ $? -ne 0 ] && echo "xterm not found"
+which xwininfo
+[ $? -ne 0 ] && echo "xwininfo not found"
+which convert
+[ $? -ne 0 ] && echo "ImageMagick's convert not found"
+which import
+[ $? -ne 0 ] && echo "ImageMagick's import not found"
+which gm
+if [ $? -eq 0 ];
+then
+	IMPORT="gm import"; export $IMPORT
+	CONVERT="gm convert"; export $CONVERT
+else
+	echo "GraphickMagick's convert/import not found"
+fi
+
+# run
+TMP=${TMP-"/tmp"}
+for q in `pgrep ^_screenshot -U $USER`;
+do
+	[ ! -e "${TMP}/${USER}_${q}.unlock" ] && exit 42
+done
+_screenshot $*
+

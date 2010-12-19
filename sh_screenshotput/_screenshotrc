@@ -1,0 +1,4 @@
+# EDIT=viewnior
+## id	description	module	path_to_put	path_to_clip
+test1 "put to test1 serv" sftp test@example.com:/path http://example.com/shots/
+

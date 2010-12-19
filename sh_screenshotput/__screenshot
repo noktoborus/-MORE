@@ -1,0 +1,157 @@
+#!/bin/sh
+CFG="$HOME/.config/_screenshotrc"
+LOCALDIR="$HOME/_public/http/shots/"
+
+CONVERT=${CONVERT-"convert"}
+SUM=md5sum
+EDIT=viewnior
+
+# -- init
+SRC="$1"
+DATE="$2"
+ENCD="$3"
+SR=""
+SZ1=0
+SZ2=0
+PID=
+TRG=
+EXT=
+# -- calls
+_exit ()
+{
+	echo "$@" >/dev/stderr
+	exit 1
+}
+
+module_sftp ()
+{
+	SRC=$1
+	DST=$2
+	RPATH=$3
+	echo "put $SRC $DST" | sftp "$RPATH"
+	[ $? -eq 0 ] && echo "$DST"
+}
+# -- code
+echo "START"
+ 
+[ ! -r "$CFG" ] && _exit "Please, feel '$CFG' and try agane"
+eval $(cat "$CFG" | grep -v '^##' | grep '^#' | cut -d'#' -f 2-)
+
+# controle sum
+[ ! -e "$SRC" ] && _exit "$SRC not exists"
+[ -z "$ENCD" ] && _exit "file format is unknown"
+[ -z "$DATE" ] && _exit "unknown is unknown"
+
+(
+	if [ ! -r "$SRC.sum" ] || (! $SUM -c --status "$SRC.sum");
+	then
+		$SUM "$SRC" > "$SRC.sum" &
+		PID="$!"
+		$CONVERT "$SRC" "jpg:$SRC.jpg" &
+		PID="$PID $!"
+		$CONVERT "$SRC" "png:$SRC.png" &
+		wait $PID
+	fi
+) &
+PID=$!
+
+TRG=$(dialog --stdout --menu "Choose target" 0 0 0\
+	edit "view/edit image with $EDIT"\
+	$(cat "$CFG" | grep -v ^$ | grep -v ^# | awk '{print $1" "$2"\\"}'))
+[ $? -ne 0 ] && exit 0
+clear
+
+if [ "$TRG" = "edit" ];
+then
+	echo "start $EDIT"
+	$EDIT $SRC
+	# wait for conv and restart
+	echo "wait fork"
+	[ ! -z "$PID" ] && wait $PID
+	echo "reset"
+	exec $0 $@
+	# test sum
+fi
+
+if [ ! -z "$PID" ];
+then
+	echo -n "wait convert... "
+	wait $PID
+	echo "OK"
+fi 
+
+echo -n "test jpeg... "
+if [ -e "$SRC.jpg" ];
+then
+	SZ1="`stat -c %s $SRC.jpg`"
+	echo "size: $SZ1"
+else
+	echo "FAIL"
+fi
+
+echo -n "test png... "
+if [ -e "$SRC.png" ];
+then
+	SZ2="`stat -c %s $SRC.png`"
+	echo "size: $SZ2"
+else
+	echo "FAIL"
+fi
+
+MODULE=$(cat "$CFG" | grep -v ^# | grep "^$TRG[[:space:]]" | awk '{print $3}')
+PUTADDR=$(cat "$CFG" | grep -v ^# | grep "^$TRG[[:space:]]" | awk '{print $4}')
+CLIPADDR=$(cat "$CFG" | grep -v ^# | grep "^$TRG[[:space:]]" | awk '{print $5}')
+[ -z "$MODULE" ] && _exit "$TRG: module not set"
+[ -z "$PUTADDR" ] && _exit "$TRG: putaddr not set"
+[ -z "$CLIPADDR" ] && _exit "$TRG: clipaddr not set"
+
+if [ "$SZ2" -ne "$SZ1" ] || ( [ -z "$SZ2" ] && [ ! -z "$SZ1" ] );
+then
+	EXT="jpg"
+	SRC="$SRC.jpg"
+elif [ ! -z "$SZ2" ];
+then
+	EXT="png"
+	SRC="$SRC.png"
+else
+	_exit "can't find files for choose"
+fi
+
+echo "copy images localy (background)"
+(
+	if [ -d "$LOCALDIR" ];
+	then
+		mkdir -p "$LOCALDIR/jpg/"
+		mkdir -p "$LOCALDIR/png/"
+		[ -e "$SRC.jpg" ] && cp "$SRC.jpg" "$LOCALDIR/jpg/$DATE.jpg"
+		[ -e "$SRC.png" ] && cp "$SRC.png" "$LOCALDIR/png/$DATE.png"
+	fi
+) &
+
+echo "copy image remotly (foreground)"
+RCOD=1
+while [ $RCOD != 0 ];
+do
+	echo "try module \`$MODULE'"
+	case "$MODULE" in
+		sftp)
+			module_sftp "$SRC" "$DATE.$EXT" "$PUTADDR" 2>&1 | tee "$SRC.log"
+			RCOD=$?
+			;;
+	esac
+done
+[ ! -r "$SRC.log" ] && _exit "module cant return part of link?"
+EXT=`cat "$SRC.log" | tail -n 1`
+
+echo "complite:"
+echo " $CLIPADDR/$EXT"
+( nohup echo -n "$CLIPADDR/$EXT" | xclip >/dev/null ) >/dev/null 2>&1
+( nohup echo -n "$CLIPADDR/$EXT" | xclip -loops 1 -selection clipboard >/dev/null & ) >/dev/null 2>&1
+
+echo -n "wait "
+for q in 5 4 3 2 1;
+do
+	echo -n "$q... ";
+	sleep 1;
+done;
+

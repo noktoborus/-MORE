@@ -1,5 +1,6 @@
 # EDIT=viewnior
 ## id	description	module	path_to_put	path_to_clip
+local	local_store local	$HOME/_public/http/shots http://localhost/~$USER/shots
 bitcheese http://dump.bitcheese.net/ bitcheese none http://dump.bitcheese.net/images
 test1 test1_store sftp test@example.com:/path http://example.com/shots/
 

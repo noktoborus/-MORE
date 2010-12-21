@@ -44,6 +44,15 @@ module_sftp ()
 	echo "put $SRC $DST" | sftp "$RPATH"
 	[ $? -eq 0 ] && echo "$DST"
 }
+
+module_local ()
+{
+	SRC=$1
+	DST=$2
+	RPATH=$3
+	cp $SRC "$RPATH/$DST"
+	echo $DST
+}
 # -- code
 echo "START"
  
@@ -114,11 +123,13 @@ fi
 MODULE=$(cat "$CFG" | grep -v ^# | grep "^$TRG[[:space:]]" | awk '{print $3}')
 PUTADDR=$(cat "$CFG" | grep -v ^# | grep "^$TRG[[:space:]]" | awk '{print $4}')
 CLIPADDR=$(cat "$CFG" | grep -v ^# | grep "^$TRG[[:space:]]" | awk '{print $5}')
+PUTADDR=$(eval "echo `echo $PUTADDR`")
+CLIPADDR=$(eval "echo `echo $CLIPADDR`")
 [ -z "$MODULE" ] && _exit "$TRG: module not set"
 [ -z "$PUTADDR" ] && _exit "$TRG: putaddr not set"
 [ -z "$CLIPADDR" ] && _exit "$TRG: clipaddr not set"
 
-if [ "$SZ2" -ne "$SZ1" ] || ( [ -z "$SZ2" ] && [ ! -z "$SZ1" ] );
+if [ "$SZ2" -lt "$SZ1" ] || ( [ -z "$SZ2" ] && [ ! -z "$SZ1" ] );
 then
 	EXT="jpg"
 	SRC="$SRC.jpg"
@@ -130,22 +141,12 @@ else
 	_exit "can't find files for choose"
 fi
 
-echo "copy images localy (background)"
-(
-	if [ -d "$LOCALDIR" ];
-	then
-		mkdir -p "$LOCALDIR/jpg/"
-		mkdir -p "$LOCALDIR/png/"
-		[ -e "$SRC.jpg" ] && cp "$SRC.jpg" "$LOCALDIR/jpg/$DATE.jpg"
-		[ -e "$SRC.png" ] && cp "$SRC.png" "$LOCALDIR/png/$DATE.png"
-	fi
-) &
-
 echo "copy image remotly (foreground)"
 RCOD=1
 while [ $RCOD != 0 ];
 do
 	echo "try module \`$MODULE'"
+#	eval "module_$MODULE \"$SRC\" \"$DATE.$EXT\" \"$PUTADDR\" 2>&1 | tee \"$SRC.log\""
 	case "$MODULE" in
 		sftp)
 			module_sftp "$SRC" "$DATE.$EXT" "$PUTADDR" 2>&1 | tee "$SRC.log"
@@ -155,7 +156,12 @@ do
 			module_bitcheese "$SRC" "$DATE.$EXT" "$PUTADDR" 2>&1 | tee "$SRC.log"
 			RCOD=$?
 			;;
+		local)
+			module_local "$SRC" "$DATE.$EXT" "$PUTADDR" 2>&1 | tee "$SRC.log"
+			RCOD=$?
+			;;
 	esac
+	[ $RCOD -ne 0 ] && sleep 1
 done
 [ ! -r "$SRC.log" ] && _exit "module cant return part of link?"
 EXT=`cat "$SRC.log" | tail -n 1`

@@ -129,16 +129,29 @@ CLIPADDR=$(eval "echo `echo $CLIPADDR`")
 [ -z "$PUTADDR" ] && _exit "$TRG: putaddr not set"
 [ -z "$CLIPADDR" ] && _exit "$TRG: clipaddr not set"
 
-if [ "$SZ2" -lt "$SZ1" ] || ( [ -z "$SZ2" ] && [ ! -z "$SZ1" ] );
+if [ ! -z "$SZ1" ] && [ ! -z "$SZ2" ];
 then
-	EXT="jpg"
-	SRC="$SRC.jpg"
-elif [ ! -z "$SZ2" ];
-then
-	EXT="png"
-	SRC="$SRC.png"
+	if [ "$SZ1" -lt "$SZ2" ];
+	then
+		EXT="jpg"
+		SRC="$SRC.jpg"
+	else
+		EXT="png"
+		SRC="$SRC.png"
+	fi
 else
-	_exit "can't find files for choose"
+	if [ -z "$SZ1" ];
+	then
+		EXT="jpg"
+		SRC="$SRC.jpg"
+	elif [ -z "$SZ2" ];
+	then
+		EXT="png"
+		SRC="$SRC.png"
+	else
+		_exit "fail choose from jpg and png"
+	fi
+
 fi
 
 echo "copy image remotly (foreground)"

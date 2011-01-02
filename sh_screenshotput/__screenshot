@@ -7,6 +7,7 @@ SUM=md5sum
 EDIT=viewnior
 
 # -- init
+OPTIPNG=
 SRC="$1"
 DATE="$2"
 ENCD="$3"
@@ -72,9 +73,13 @@ eval $(cat "$CFG" | grep -v '^##' | grep '^#' | cut -d'#' -f 2-)
 		$CONVERT "$SRC" "jpg:$SRC.jpg" &
 		PID="$PID $!"
 		$CONVERT "$SRC" "png:$SRC.png" &
+		PID="$PID $!"
 		wait $PID
-		#( optipng >/dev/null 2>&1 ) >/dev/null 2>&1
-		#[ $? -eq 0 ] && optipng -o 9 "$SRC.png" >/dev/null 2>&1
+		if [ ! -z "$OPTIPNG" ];
+		then
+			( $OPTIPNG >/dev/null 2>&1 ) >/dev/null 2>&1
+			[ $? -eq 0 ] && $OPTIPNG -o 9 "$SRC.png" >/dev/null 2>&1
+		fi
 	fi
 ) &
 PID=$!
@@ -136,8 +141,8 @@ CLIPADDR=$(eval "echo `echo $CLIPADDR`")
 PID="$!"
 
 TRG=$(dialog --stdout --menu "Choose format to copy" 0 0 0\
-	png "PNG with size $(stat -c %s $SRC.png 2>/dev/null || echo 'not prepared')"\
-	jpg "JPG with size $(stat -c %s $SRC.jpg 2>/dev/null || echo 'not prepared')")
+	png "PNG with size: $(stat -c %s $SRC.png 2>/dev/null || echo 'not prepared')"\
+	jpg "JPG with size: $(stat -c %s $SRC.jpg 2>/dev/null || echo 'not prepared')")
 [ $? -ne 0 ] && exit 0
 clear
 echo "you choose: $TRG"

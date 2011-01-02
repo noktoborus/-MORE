@@ -1,4 +1,6 @@
 # EDIT=viewnior
+## too sloooow :(
+# OPTIPNG=
 ## id	description	module	path_to_put	path_to_clip
 local	local_store local	$HOME/_public/http/shots http://localhost/~$USER/shots
 bitcheese http://dump.bitcheese.net/ bitcheese none http://dump.bitcheese.net/images

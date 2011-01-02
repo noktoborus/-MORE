@@ -10,12 +10,12 @@ EDIT=viewnior
 SRC="$1"
 DATE="$2"
 ENCD="$3"
-SR=""
-SZ1=0
-SZ2=0
+SSRC=
 PID=
 TRG=
 EXT=
+ENDADDR=
+#TAILPID=
 # -- calls
 _exit ()
 {
@@ -104,24 +104,6 @@ then
 	echo "OK"
 fi 
 
-echo -n "test jpeg... "
-if [ -e "$SRC.jpg" ];
-then
-	SZ1="`stat -c %s $SRC.jpg`"
-	echo "size: $SZ1"
-else
-	echo "FAIL"
-fi
-
-echo -n "test png... "
-if [ -e "$SRC.png" ];
-then
-	SZ2="`stat -c %s $SRC.png`"
-	echo "size: $SZ2"
-else
-	echo "FAIL"
-fi
-
 MODULE=$(cat "$CFG" | grep -v ^# | grep "^$TRG[[:space:]]" | awk '{print $3}')
 PUTADDR=$(cat "$CFG" | grep -v ^# | grep "^$TRG[[:space:]]" | awk '{print $4}')
 CLIPADDR=$(cat "$CFG" | grep -v ^# | grep "^$TRG[[:space:]]" | awk '{print $5}')
@@ -131,65 +113,63 @@ CLIPADDR=$(eval "echo `echo $CLIPADDR`")
 [ -z "$PUTADDR" ] && _exit "$TRG: putaddr not set"
 [ -z "$CLIPADDR" ] && _exit "$TRG: clipaddr not set"
 
-if [ ! -z "$SZ1" ] && [ ! -z "$SZ2" ];
-then
-	if [ "$SZ1" -lt "$SZ2" ];
-	then
-		EXT="jpg"
-		SRC="$SRC.jpg"
-	else
-		EXT="png"
-		SRC="$SRC.png"
-	fi
-else
-	if [ -z "$SZ1" ];
-	then
-		EXT="jpg"
-		SRC="$SRC.jpg"
-	elif [ -z "$SZ2" ];
-	then
-		EXT="png"
-		SRC="$SRC.png"
-	else
-		_exit "fail choose from jpg and png"
-	fi
+(
+	echo "copy image remotly (background)"
+	RCOD=1
+	SSRC="$SRC"
+	PID=""
+	for EXT in "jpg" "png";
+	do
+		(
+			while [ $RCOD != 0 ];
+			do
+				SRC="$SSRC.$EXT"
+				eval "module_$MODULE '$SRC' '$DATE.$EXT' '$PUTADDR' > '$SRC.log' 2>&1"
+				RCOD=$?
+				[ $RCOD -ne 0 ] && sleep 1
+			done
+		) &
+		PID="$PID $!"
+	done
+	wait $PID
+) &
+PID="$!"
 
+TRG=$(dialog --stdout --menu "Choose format to copy" 0 0 0\
+	png "PNG with size $(stat -c %s $SRC.png 2>/dev/null || echo 'not prepared')"\
+	jpg "JPG with size $(stat -c %s $SRC.jpg 2>/dev/null || echo 'not prepared')")
+[ $? -ne 0 ] && exit 0
+clear
+echo "you choose: $TRG"
+echo "wait fot put module ($PID)"
+tail --follow=name "$SRC.$TRG.log" 2>/dev/null &
+#TAILPID="$!"
+wait "$PID"
+#kill "$TAILPID" >/dev/null 2>&1
+
+if [ ! -r "$SRC.png.log" ];
+then
+	echo "putting PNG can't complete"
+else
+	EXT=$(cat "$SRC.png.log" | tail -n 1)
+	echo "complite PNG:"
+	echo " $CLIPADDR/$EXT"
+	[ "$TRG" = "png" ] && ENDADDR="$CLIPADDR/$EXT"
 fi
 
-echo "copy image remotly (foreground)"
-RCOD=1
-while [ $RCOD != 0 ];
-do
-	echo "try module \`$MODULE'"
-#	eval "module_$MODULE \"$SRC\" \"$DATE.$EXT\" \"$PUTADDR\" 2>&1 | tee \"$SRC.log\""
-	case "$MODULE" in
-		sftp)
-			module_sftp "$SRC" "$DATE.$EXT" "$PUTADDR" 2>&1 | tee "$SRC.log"
-			RCOD=$?
-			;;
-		bitcheese)
-			module_bitcheese "$SRC" "$DATE.$EXT" "$PUTADDR" 2>&1 | tee "$SRC.log"
-			RCOD=$?
-			;;
-		local)
-			module_local "$SRC" "$DATE.$EXT" "$PUTADDR" 2>&1 | tee "$SRC.log"
-			RCOD=$?
-			;;
-	esac
-	[ $RCOD -ne 0 ] && sleep 1
-done
-[ ! -r "$SRC.log" ] && _exit "module cant return part of link?"
-EXT=`cat "$SRC.log" | tail -n 1`
+if [ ! -r "$SRC.jpg.log" ];
+then
+	echo "putting JPG can't complete"
+else
+	EXT=$(cat "$SRC.jpg.log" | tail -n 1)
+	echo "complete JPG:"
+	echo " $CLIPADDR/$EXT"
+	[ "$TRG" = "jpg" ] && ENDADDR="$CLIPADDR/$EXT"
+fi
 
-echo "complite:"
-echo " $CLIPADDR/$EXT"
-( nohup echo -n "$CLIPADDR/$EXT" | xclip >/dev/null ) >/dev/null 2>&1
-( nohup echo -n "$CLIPADDR/$EXT" | xclip -loops 1 -selection clipboard >/dev/null & ) >/dev/null 2>&1
-
-echo -n "wait "
-for q in 5 4 3 2 1;
-do
-	echo -n "$q... ";
-	sleep 1;
-done;
+SRC=$(xclip -o -selection clipboard 2>/dev/null)
+echo "xclip in loops: 1"
+echo -n "$ENDADDR" | xclip -loops 1 -quiet -selection clipboard 2>&1
+echo "END"
+echo "$SRC" | xclip -loops 1 -silent -selection clipboard
 

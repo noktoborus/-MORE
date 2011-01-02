@@ -73,8 +73,8 @@ eval $(cat "$CFG" | grep -v '^##' | grep '^#' | cut -d'#' -f 2-)
 		PID="$PID $!"
 		$CONVERT "$SRC" "png:$SRC.png" &
 		wait $PID
-		( optipng >/dev/null 2>&1 ) >/dev/null 2>&1
-		[ $? -eq 0 ] && optipng -o 9 "$SRC.png" >/dev/null 2>&1
+		#( optipng >/dev/null 2>&1 ) >/dev/null 2>&1
+		#[ $? -eq 0 ] && optipng -o 9 "$SRC.png" >/dev/null 2>&1
 	fi
 ) &
 PID=$!

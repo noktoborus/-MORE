@@ -158,7 +158,7 @@ then
 else
 	EXT=$(cat "$SRC.png.log" | tail -n 1)
 	echo "complite PNG:"
-	echo " $CLIPADDR/$EXT"
+	echo " $CLIPADDR/$EXT ($SZ2)"
 	[ "$TRG" = "png" ] && ENDADDR="$CLIPADDR/$EXT"
 fi
 
@@ -168,7 +168,7 @@ then
 else
 	EXT=$(cat "$SRC.jpg.log" | tail -n 1)
 	echo "complete JPG:"
-	echo " $CLIPADDR/$EXT"
+	echo " $CLIPADDR/$EXT ($SZ1)"
 	[ "$TRG" = "jpg" ] && ENDADDR="$CLIPADDR/$EXT"
 fi
 

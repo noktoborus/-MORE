@@ -294,7 +294,14 @@ sub1 (int fin_sz, FILE **fin, FILE *fout)
 
 	while (fin_sz--)
 	{
-		fprintf (stderr, "process[%d] ->\n\t\t", fin_sz);
+		fprintf (stderr, "process[%d] \"%p\"->\n\t\t", fin_sz,
+				(void*)fin[fin_sz]);
+		if (!fin[fin_sz])
+		{
+			fprintf (stderr, "SKIPED\n");
+			continue;
+		}
+
 		while ((cread = fread (rbuf, sizeof (uint8_t), 1024, fin[fin_sz])))
 		{
 			ccread = 0;
@@ -379,7 +386,8 @@ main (int argc, char *argv[])
 			return 3;
 		}
 		while (count--)
-			fclose (fin[count]);
+			if (fin[count])
+				fclose (fin[count]);
 	}
 	else
 		return 1;

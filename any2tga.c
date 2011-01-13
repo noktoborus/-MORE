@@ -273,7 +273,7 @@ struct TGAHeader_t ntga =
 };
 
 void
-sub1 (FILE *fin, FILE *fout)
+sub1 (int fin_sz, FILE **fin, FILE *fout)
 {
 	size_t cread = 0;
 	size_t cnum = 0;
@@ -283,31 +283,38 @@ sub1 (FILE *fin, FILE *fout)
 	size_t ccread;
 	uint8_t lastc = 0;
 	size_t ite = 0;
-
+	if (fin_sz < 1)
+		return;
 	fprintf (stderr, "begin\n");
 	if (!fwrite (&ntga, TGA_HEADER_SIZE, 1, fout))
 	{
 		fprintf (stderr, "init write error\n");
 		return;
 	}
-	while ((cread = fread (rbuf, sizeof (uint8_t), 1024, fin)))
+
+	while (fin_sz--)
 	{
-		ccread = 0;
-		cnum = 0;
-		do
+		fprintf (stderr, "process[%d] ->\n\t\t", fin_sz);
+		while ((cread = fread (rbuf, sizeof (uint8_t), 1024, fin[fin_sz])))
 		{
-			ite++;
-			cbuf[cnum++] = (rbuf[ccread] % 127) +128;
-			lastc = rbuf[ccread] & 0xf0;
-			if (!(ite & 3))
+			ccread = 0;
+			cnum = 0;
+			do
 			{
-				cbuf[cnum++] = 0xff; /* skeep alpha */
-				pixcc++;
 				ite++;
+				cbuf[cnum++] = (rbuf[ccread] % 127) +128;
+				lastc = rbuf[ccread] & 0xf0;
+				if (!(ite & 3))
+				{
+					cbuf[cnum++] = 0xff; /* skeep alpha */
+					pixcc++;
+					ite++;
+				}
 			}
+			while (++ccread < cread);
+			fwrite (cbuf, sizeof (uint8_t), cnum, fout);
 		}
-		while (++ccread < cread);
-		fwrite (cbuf, sizeof (uint8_t), cnum, fout);
+		fprintf (stderr, "OK\n");
 	}
 	// feel values
 	ntga.imageSpec.size[0] = sqrt ((double)pixcc);
@@ -327,8 +334,9 @@ sub1 (FILE *fin, FILE *fout)
 int
 main (int argc, char *argv[])
 {
-	FILE *fin = NULL;
+	FILE **fin = NULL;
 	FILE *fout = NULL;
+	int count = 0;
 
 	if (argc < 3)
 	{
@@ -336,18 +344,42 @@ main (int argc, char *argv[])
 		return 1;
 	}
 
-	fin = fopen (argv[1], "rb");
+	fin = calloc (argc - 2, sizeof (FILE*));
+	if (!fin)
+	{
+		perror ("main");
+		return 2;
+	}
+
+	do
+	{
+		fprintf (stderr, "open[%d] \"%s\" ->\n\t\t", count, argv[count + 1]);
+		fin[count] = fopen (argv[count + 1], "rb");
+		if (!fin[count])
+		{
+			perror ("main");
+		}
+		else
+			fprintf (stderr, "OK\n");
+	}
+	while (++count < argc - 2);
+
 	if (fin)
 	{
-		fout = fopen (argv[2], "wb");
+		fout = fopen (argv[argc - 1], "wb");
 		if (fout)
 		{
-			sub1 (fin, fout);
+			sub1 (count, fin, fout);
 			fclose (fout);
 		}
 		else
-			return 2;
-		fclose (fin);
+		{
+			perror ("main");
+			fprintf (stderr, "\tnot opened to write: %s\n", argv[argc - 1]);
+			return 3;
+		}
+		while (count--)
+			fclose (fin[count]);
 	}
 	else
 		return 1;

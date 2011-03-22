@@ -1,0 +1,11 @@
+hide_disclaimer = "yes"
+csv2 = {}
+
+csv2["samplehost.net."] = "db.samplehost.${NAME}"
+
+ipv4_bind_addresses = "127.0.0.1, 10.0.0.5"
+
+dns_port = "${PORT}"
+
+chroot_dir = "$(realpath $CFG_DIR/../output/db)"
+

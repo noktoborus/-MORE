@@ -14,9 +14,8 @@ while read line;
 do
 	echo "|1||$line" >> "$FI"
 done <<!
-./te.sh|distfiles
-./te.sh|man-interest
-./te.sh|distfiles man-interest
+/usr/bin/maradns -f ./output/mararc.internal|./output/mararc.internal ./output/db/db.samplehost.internal
+/usr/bin/maradns -f ./output/mararc.external|./output/mararc.external ./output/db/db.samplehost.external
 !
 
 echo "$FI1:$FI2"

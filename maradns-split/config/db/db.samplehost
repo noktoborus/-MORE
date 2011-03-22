@@ -1,0 +1,7 @@
+% SOA	% admin@% 1 7200 3600 604800 1800 ~
+
+% NS	ns1.samplens.net. ~
+% NS	ns2.samplens.net. ~
+
+% A ${HOST_A} ~
+

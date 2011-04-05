@@ -18,8 +18,8 @@ which import
 which gm
 if [ $? -eq 0 ];
 then
-	IMPORT="gm import"; export $IMPORT
-	CONVERT="gm convert"; export $CONVERT
+	export IMPORT="gm import"; export $IMPORT
+	export CONVERT="gm convert"; export $CONVERT
 else
 	echo "GraphickMagick's convert/import not found"
 fi

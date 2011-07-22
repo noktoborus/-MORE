@@ -23,8 +23,8 @@ then
 else
 	echo "GraphickMagick's convert/import not found"
 fi
-
 # run
+SCR_TERM=${WMII_TERM-"xterm"}
 TMP=${TMP-"/tmp"}
 for q in `pgrep ^_screenshot -U $USER`;
 do

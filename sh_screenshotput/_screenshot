@@ -35,12 +35,11 @@ fi
 echo $$ > "${TMP}/${USER}_$$.unlock"
 if [ -e "$FILE" ];
 then
-	xterm -T 'screenshot output'\
-		-e "__screenshot \"$FILE\" \"$FN\" \"$CONV\" 2>$TMP/$FN/stderr"
+	$SCR_TERM -e "__screenshot \"$FILE\" \"$FN\" \"$CONV\" 2>$TMP/$FN/stderr"
 	if [ -r "$TMP/$FN/stderr" ];
 	then
 		[ `stat -c %s $TMP/$FN/stderr` -ne 0 ] &&\
-			xterm -T $FILE -e "sh -c 'cat $TMP/$FN/stderr | less'"
+			$SCR_TERM -e "sh -c 'cat $TMP/$FN/stderr | less'"
 	fi
 fi
 rm -rf "$TMP/$FN" >/dev/null 2>&1
